@@ -39,6 +39,7 @@ async function run() {
         const carBookingCollection = client.db('carSite').collection('booking')
         const userCollection = client.db('carSite').collection('users')
         const spareCollection = client.db('carSite').collection('spare')
+        const productsCollection = client.db('carSite').collection('products')
 
 
 
@@ -46,21 +47,21 @@ async function run() {
             const query = {};
             const result = await carProductsCollection.find(query).toArray()
             res.send(result)
-        })
+        });
 
         app.get('/services/:id', async (req, res) => {
             const id = req.params.id;
             const query = { _id: ObjectId(id) };
             const service = await carProductsCollection.findOne(query)
             res.send(service)
-        })
+        });
 
         app.post('/bookings', async (req, res) => {
             const user = req.body;
             console.log(user);
             const result = await carBookingCollection.insertOne(user)
             res.send(result)
-        })
+        });
 
         app.get('/bookings', verifyJWT, async (req, res) => {
             const email = req.query.email;
@@ -101,7 +102,7 @@ async function run() {
             const user = await userCollection.findOne(query);
             res.send({ isAdmin: user?.role === 'admin' });
 
-        })
+        });
 
         app.put('/users/admin/:id', verifyJWT, async (req, res) => {
             const id = req.params.id;
@@ -114,7 +115,7 @@ async function run() {
             }
             const result = await userCollection.updateOne(filter, updateDoc, option);
             res.send(result);
-        })
+        });
 
         // create sellers section
         app.get('/users/sellers/:email', async (req, res) => {
@@ -123,7 +124,7 @@ async function run() {
             const user = await userCollection.findOne(query);
             res.send({ isSeller: user?.roles === 'seller' });
 
-        })
+        });
 
         app.put('/users/sellers/:id', verifyJWT, async (req, res) => {
             const id = req.params.id;
@@ -136,7 +137,7 @@ async function run() {
             }
             const result = await userCollection.updateOne(filter, updateDoc, option);
             res.send(result);
-        })
+        });
 
 
 
@@ -145,7 +146,7 @@ async function run() {
             const query = {}
             const result = await userCollection.find(query).toArray()
             res.send(result)
-        })
+        });
 
         app.delete('/users/:id', async (req, res) => {
 
@@ -153,14 +154,29 @@ async function run() {
             const filter = { _id: ObjectId(id) }
             const output = await userCollection.deleteOne(filter)
             res.send(output)
-        })
+        });
 
 
         app.get('/spare', async (req, res) => {
             const query = {}
             const result = await spareCollection.find(query).toArray();
             res.send(result)
+        });
+
+        // add products api
+
+        app.post('/products', async (req,res) =>{
+            const user = req.body;
+            const result = await productsCollection.insertOne(user)
+            res.send(result)
+        });
+
+        app.get('/products', async (req,res) =>{
+            const query= {}
+            const products = await productsCollection.find(query).toArray()
+            res.send(products)
         })
+
     }
     finally {
 
