@@ -94,26 +94,69 @@ async function run() {
             res.send(result)
         });
 
+        // create admin 
+        app.get('/users/admin/:email', async (req, res) => {
+            const email = req.params.email;
+            const query = { email };
+            const user = await userCollection.findOne(query);
+            res.send({ isAdmin: user?.role === 'admin' });
+
+        })
+
+        app.put('/users/admin/:id', verifyJWT, async (req, res) => {
+            const id = req.params.id;
+            const filter = { _id: ObjectId(id) };
+            const option = { upsert: true };
+            const updateDoc = {
+                $set: {
+                    role: 'admin'
+                }
+            }
+            const result = await userCollection.updateOne(filter, updateDoc, option);
+            res.send(result);
+        })
+
+        // create sellers section
+        app.get('/users/sellers/:email', async (req, res) => {
+            const email = req.params.email;
+            const query = { email };
+            const user = await userCollection.findOne(query);
+            res.send({ isSeller: user?.roles === 'seller' });
+
+        })
+
+        app.put('/users/sellers/:id', verifyJWT, async (req, res) => {
+            const id = req.params.id;
+            const filter = { _id: ObjectId(id) };
+            const option = { upsert: true };
+            const updateDoc = {
+                $set: {
+                    roles: 'seller'
+                }
+            }
+            const result = await userCollection.updateOne(filter, updateDoc, option);
+            res.send(result);
+        })
+
+
+
+
         app.get('/users', verifyJWT, async (req, res) => {
             const query = {}
             const result = await userCollection.find(query).toArray()
             res.send(result)
         })
 
-        app.delete('/users/:id', verifyJWT, async (req, res) => {
+        app.delete('/users/:id', async (req, res) => {
+
             const id = req.params.id;
             const filter = { _id: ObjectId(id) }
             const output = await userCollection.deleteOne(filter)
             res.send(output)
         })
 
-        // app.get('/spare', async (req, res) => {
-        //    const query = {}
-        //    const spare = await spareCollection.find(query).toArray()
-        //    res.send(spare)
-        // })
 
-        app.get ('/spare', async (req,res) =>{
+        app.get('/spare', async (req, res) => {
             const query = {}
             const result = await spareCollection.find(query).toArray();
             res.send(result)
