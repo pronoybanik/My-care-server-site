@@ -40,6 +40,7 @@ async function run() {
         const userCollection = client.db('carSite').collection('users')
         const spareCollection = client.db('carSite').collection('spare')
         const productsCollection = client.db('carSite').collection('products')
+        const updateCarCollection = client.db('carSite').collection('updatecar')
 
 
 
@@ -62,6 +63,14 @@ async function run() {
             const result = await carBookingCollection.insertOne(user)
             res.send(result)
         });
+
+        app.delete('/bookings/:id', async (req, res) => {
+            const id = req.params.id;
+            console.log(id);
+            const query = { _id: ObjectId(id) }
+            const bookings = await carBookingCollection.deleteOne(query)
+            res.send(bookings)
+        })
 
         app.get('/bookings', verifyJWT, async (req, res) => {
             const email = req.query.email;
@@ -143,17 +152,16 @@ async function run() {
 
 
         app.get('/users', verifyJWT, async (req, res) => {
-            const query = {}
+            const query = {};
             const result = await userCollection.find(query).toArray()
-            res.send(result)
+            res.send(result);
         });
 
-        app.delete('/users/:id', async (req, res) => {
-
+        app.delete('/users/:id', async (req, res) => { 
             const id = req.params.id;
-            const filter = { _id: ObjectId(id) }
-            const output = await userCollection.deleteOne(filter)
-            res.send(output)
+            const filter = { _id: ObjectId(id) };
+            const output = await userCollection.deleteOne(filter);
+            res.send(output);
         });
 
 
@@ -165,16 +173,29 @@ async function run() {
 
         // add products api
 
-        app.post('/products', async (req,res) =>{
+        app.post('/products', async (req, res) => {
             const user = req.body;
             const result = await productsCollection.insertOne(user)
             res.send(result)
         });
 
-        app.get('/products', async (req,res) =>{
-            const query= {}
+        app.get('/products', async (req, res) => {
+            const query = {}
             const products = await productsCollection.find(query).toArray()
             res.send(products)
+        })
+
+        app.get('/updatecar', async (req, res) => {
+            const query = {}
+            const cars = await updateCarCollection.find(query).toArray()
+            res.send(cars)
+        })
+
+        app.get('/update/:id', async (req, res) => {
+            const id = req.params.id;
+            const user = { _id: ObjectId(id) }
+            const result = await updateCarCollection.findOne(user)
+            res.send(result)
         })
 
     }
