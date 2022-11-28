@@ -1,7 +1,7 @@
 const express = require('express');
 const cors = require('cors');
-require('dotenv').config()
-const jwt = require('jsonwebtoken')
+require('dotenv').config();
+const jwt = require('jsonwebtoken');
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const app = express();
 const port = process.env.POST || 5000;
@@ -35,13 +35,13 @@ function verifyJWT(req, res, next) {
 
 async function run() {
     try {
-        const carProductsCollection = client.db('carSite').collection('carCollection')
-        const carBookingCollection = client.db('carSite').collection('booking')
-        const userCollection = client.db('carSite').collection('users')
-        const spareCollection = client.db('carSite').collection('spare')
-        const productsCollection = client.db('carSite').collection('products')
-        const updateCarCollection = client.db('carSite').collection('updatecar')
-
+        const carProductsCollection = client.db('carSite').collection('carCollection');
+        const carBookingCollection = client.db('carSite').collection('booking');
+        const userCollection = client.db('carSite').collection('users');
+        const spareCollection = client.db('carSite').collection('spare');
+        const productsCollection = client.db('carSite').collection('products');
+        const updateCarCollection = client.db('carSite').collection('updatecar');
+        const paymentCollection = client.db('carSite').collection('payments')
 
 
         app.get('/services', async (req, res) => {
@@ -153,9 +153,6 @@ async function run() {
             res.send(result);
         });
 
-
-
-
         app.get('/users', verifyJWT, async (req, res) => {
             const query = {};
             const result = await userCollection.find(query).toArray()
@@ -202,23 +199,39 @@ async function run() {
             const result = await updateCarCollection.findOne(user)
             res.send(result)
         });
-        
+
         app.post("/create-payment-intent", async (req, res) => {
             const booking = req.body;
             const price = booking.sellprice;
             const amount = price * 100;
-      
+
             const paymentIntent = await stripe.paymentIntents.create({
-              currency: 'usd',
-              amount: amount,
-              "payment_method_types": [
-                "card"
-              ]
+                currency: 'usd',
+                amount: amount,
+                "payment_method_types": [
+                    "card"
+                ]
             });
             res.send({
-              clientSecret: paymentIntent.client_secret,
+                clientSecret: paymentIntent.client_secret,
             })
-          });
+        });
+
+        app.post('/payments', async (req, res) => {
+            const payment = req.body;
+            const result = await paymentCollection.insertOne(payment);
+            const id = payment.bookingId;
+            const filter = { _id: ObjectId(id) }
+            const updateDoc = {
+                $set: {
+                    paid: true,
+                    transactionId: payment.transactionId
+                }
+            }
+            const updateResult = await carBookingCollection.updateOne(filter, updateDoc)
+            console.log('updateResult', updateResult);
+            res.send(updateResult)
+        })
 
     }
     finally {
