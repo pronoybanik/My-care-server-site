@@ -5,7 +5,7 @@ const jwt = require('jsonwebtoken')
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const app = express();
 const port = process.env.POST || 5000;
-
+const stripe = require("stripe")(process.env.STRIP_COAD)
 
 app.use(cors());
 app.use(express.json());
@@ -66,9 +66,14 @@ async function run() {
 
         app.delete('/bookings/:id', async (req, res) => {
             const id = req.params.id;
-            console.log(id);
             const query = { _id: ObjectId(id) }
             const bookings = await carBookingCollection.deleteOne(query)
+            res.send(bookings)
+        })
+        app.get('/bookings/:id', async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: ObjectId(id) }
+            const bookings = await carBookingCollection.findOne(query)
             res.send(bookings)
         })
 
@@ -157,7 +162,7 @@ async function run() {
             res.send(result);
         });
 
-        app.delete('/users/:id', async (req, res) => { 
+        app.delete('/users/:id', async (req, res) => {
             const id = req.params.id;
             const filter = { _id: ObjectId(id) };
             const output = await userCollection.deleteOne(filter);
@@ -183,20 +188,37 @@ async function run() {
             const query = {}
             const products = await productsCollection.find(query).toArray()
             res.send(products)
-        })
+        });
 
         app.get('/updatecar', async (req, res) => {
             const query = {}
             const cars = await updateCarCollection.find(query).toArray()
             res.send(cars)
-        })
+        });
 
         app.get('/update/:id', async (req, res) => {
             const id = req.params.id;
             const user = { _id: ObjectId(id) }
             const result = await updateCarCollection.findOne(user)
             res.send(result)
-        })
+        });
+        
+        app.post("/create-payment-intent", async (req, res) => {
+            const booking = req.body;
+            const price = booking.sellprice;
+            const amount = price * 100;
+      
+            const paymentIntent = await stripe.paymentIntents.create({
+              currency: 'usd',
+              amount: amount,
+              "payment_method_types": [
+                "card"
+              ]
+            });
+            res.send({
+              clientSecret: paymentIntent.client_secret,
+            })
+          });
 
     }
     finally {
