@@ -42,6 +42,7 @@ async function run() {
         const productsCollection = client.db('carSite').collection('products');
         const updateCarCollection = client.db('carSite').collection('updatecar');
         const paymentCollection = client.db('carSite').collection('payments')
+        const feedBackCollection = client.db('carSite').collection('feedback')
 
 
         app.get('/services', async (req, res) => {
@@ -69,18 +70,19 @@ async function run() {
             const query = { _id: ObjectId(id) }
             const bookings = await carBookingCollection.deleteOne(query)
             res.send(bookings)
-        })
+        });
+
         app.get('/bookings/:id', async (req, res) => {
             const id = req.params.id;
             const query = { _id: ObjectId(id) }
             const bookings = await carBookingCollection.findOne(query)
             res.send(bookings)
-        })
+        });
 
         app.get('/bookings', verifyJWT, async (req, res) => {
             const email = req.query.email;
-
             const decodeEmail = req.decoded.email;
+
             if (email !== decodeEmail) {
                 return res.status(403).send({ message: 'forbidden access' })
             }
@@ -95,7 +97,7 @@ async function run() {
             const query = { email: email }
             const user = await userCollection.findOne(query)
             if (user) {
-                const token = jwt.sign({ email }, process.env.ACCESS_TOKEN_SECRET, { expiresIn: '10h' })
+                const token = jwt.sign({ email }, process.env.ACCESS_TOKEN_SECRET, { expiresIn: '20h' })
                 return res.send({ accessToken: token })
             }
             console.log(user);
@@ -202,8 +204,9 @@ async function run() {
 
         app.post("/create-payment-intent", async (req, res) => {
             const booking = req.body;
+            console.log(booking);
             const price = booking.sellprice;
-            const amount = price * 100;
+            const amount = parseInt(price) * 100;
 
             const paymentIntent = await stripe.paymentIntents.create({
                 currency: 'usd',
@@ -231,6 +234,20 @@ async function run() {
             const updateResult = await carBookingCollection.updateOne(filter, updateDoc)
             console.log('updateResult', updateResult);
             res.send(updateResult)
+        })
+
+        // feedback api
+
+        app.post('/feedback', async (req, res) => {
+            const query = req.body
+            const feedback = await feedBackCollection.insertOne(query)
+            res.send(feedback);
+        });
+
+        app.get('/feedback', async (req, res) => {
+            const query = {}
+            const result = await feedBackCollection.find(query).toArray()
+            res.send(result)
         })
 
     }
